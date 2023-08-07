@@ -4,20 +4,21 @@ void GOL_Init(uint8_t* pVideoBuff, uint8_t size) {
 	cellSize = size;
 	numCellsByte = 8 / size;
 	pPlayingField = pVideoBuff;
+	maxFieldX = LCD5510_X / size;
+	maxFieldY = LCD5510_Y * numCellsByte;
 }
 
 void GOL_Next_Step() {
 	uint8_t tmpBuff[3][LCD5510_Y] = {};
 		
-	for(int8_t y = 0; y < LCD5510_Y * numCellsByte; y++) {
-		tmpBuff[0][y / numCellsByte] +=
-			GOL_Get_Next_State_Cell(0, y) << (y % numCellsByte);
-		tmpBuff[1][y / numCellsByte] +=
-			GOL_Get_Next_State_Cell(1, y) << (y % numCellsByte);
+	for(int8_t fieldY = 0; fieldY < LCD5510_Y * numCellsByte; fieldY++) {
+		tmpBuff[0][fieldY / numCellsByte] +=
+			GOL_Get_Next_State_Cell(0, fieldY) << (fieldY % numCellsByte);
+		tmpBuff[1][fieldY / numCellsByte] +=
+			GOL_Get_Next_State_Cell(1, fieldY) << (fieldY % numCellsByte);
 	}
 	
-	
-	for(int8_t x = 2; x < LCD5510_X / cellSize; x++) {
+	for(int8_t fieldX = 2; fieldX < LCD5510_X / cellSize; fieldX++) {
 		tmpBuff[2][0] = 0;
 		tmpBuff[2][1] = 0;
 		tmpBuff[2][2] = 0;
@@ -25,11 +26,11 @@ void GOL_Next_Step() {
 		tmpBuff[2][4] = 0;
 		tmpBuff[2][5] = 0;
 		
-		for(int8_t y = 0; y < LCD5510_Y * numCellsByte; y++) {
-			tmpBuff[2][y / numCellsByte] +=
-				GOL_Get_Next_State_Cell(x, y) << (y % numCellsByte);
+		for(int8_t fieldY = 0; fieldY < LCD5510_Y * numCellsByte; fieldY++) {
+			tmpBuff[2][fieldY / numCellsByte] +=
+				GOL_Get_Next_State_Cell(fieldX, fieldY) << (fieldY % numCellsByte);
 		}
-		GOL_Draw_Column(tmpBuff[1], x - 1);
+		GOL_Draw_Column(tmpBuff[1], fieldX - 1);
 		tmpBuff[1][0] = tmpBuff[2][0];
 		tmpBuff[1][1] = tmpBuff[2][1];
 		tmpBuff[1][2] = tmpBuff[2][2];
@@ -45,12 +46,9 @@ void GOL_Next_Step() {
 void GOL_Draw_Column(uint8_t *pData, int8_t x) {
 	x *= cellSize;
 	for(uint8_t i = 0; i < cellSize; i++) {
-		
 		for(uint8_t y = 0; y < LCD5510_Y; y++) {
 			pPlayingField[y * LCD5510_X + x] = 0;
-			
 			for(uint8_t bit = 0; bit < 8; bit += cellSize) {
-				
 				for(uint8_t j = 0; j < cellSize; j++) {
 					if(pData[y] & 1<<(bit / cellSize)) 
 						pPlayingField[y * LCD5510_X + x] += 1<<(bit + j);
@@ -61,18 +59,18 @@ void GOL_Draw_Column(uint8_t *pData, int8_t x) {
 	}
 }
 
-uint8_t GOL_Get_Next_State_Cell(int8_t x, int8_t y) {
+uint8_t GOL_Get_Next_State_Cell(int8_t fieldX, int8_t fieldY) {
 	uint8_t amtCell = 0;
-	amtCell += GOL_Get_bit(x-1,	y-1);
-	amtCell += GOL_Get_bit(x,	y-1);
-	amtCell += GOL_Get_bit(x+1,	y-1);
-	amtCell += GOL_Get_bit(x-1,	y);
-	amtCell += GOL_Get_bit(x+1,	y);
-	amtCell += GOL_Get_bit(x-1,	y+1);
-	amtCell += GOL_Get_bit(x,	y+1);
-	amtCell += GOL_Get_bit(x+1,	y+1);
+	amtCell += GOL_Get_bit(fieldX -1,	fieldY -1);
+	amtCell += GOL_Get_bit(fieldX,		fieldY -1);
+	amtCell += GOL_Get_bit(fieldX +1,	fieldY -1);
+	amtCell += GOL_Get_bit(fieldX -1,	fieldY);
+	amtCell += GOL_Get_bit(fieldX +1,	fieldY);
+	amtCell += GOL_Get_bit(fieldX -1,	fieldY +1);
+	amtCell += GOL_Get_bit(fieldX,		fieldY +1);
+	amtCell += GOL_Get_bit(fieldX +1,	fieldY +1);
 	
-	return GOL_Cell_Condition_Check(GOL_Get_bit(x, y), amtCell);
+	return GOL_Cell_Condition_Check(GOL_Get_bit(fieldX, fieldY), amtCell);
 }
 
 
@@ -107,10 +105,8 @@ uint8_t GOL_Get_bit(int8_t x, int8_t y) {
 	uint8_t bit = y % numCellsByte * cellSize;
 	y /= numCellsByte;
 	
-	
 	if(pPlayingField[y * LCD5510_X + x] & (1 << bit))
 		return 1;
-	else 
+	else
 		return 0;
 }
-

@@ -6,6 +6,8 @@
 uint8_t *pPlayingField;
 uint8_t	cellSize;
 uint8_t numCellsByte;
+uint8_t maxFieldX;
+uint8_t maxFieldY;
 
 void GOL_Init(uint8_t* pVideoBuff, uint8_t size);
 void GOL_Next_Step();
