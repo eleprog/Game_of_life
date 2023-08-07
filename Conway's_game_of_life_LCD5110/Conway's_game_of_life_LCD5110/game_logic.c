@@ -4,18 +4,26 @@ void GOL_Init(uint8_t* pVideoBuff, uint8_t size) {
 	cellSize = size;
 	numCellsByte = 8 / size;
 	pPlayingField = pVideoBuff;
-	maxFieldX = LCD5510_X / size;
-	maxFieldY = LCD5510_Y * numCellsByte;
+
+	if(size == 1) bitMask = GOL_BITMASK_CELL_SIZE_1;
+	if(size == 2) bitMask = GOL_BITMASK_CELL_SIZE_2;
+	if(size == 4) bitMask = GOL_BITMASK_CELL_SIZE_4;
+	if(size == 8) bitMask = GOL_BITMASK_CELL_SIZE_8;
 }
 
 void GOL_Next_Step() {
 	uint8_t tmpBuff[3][LCD5510_Y] = {};
-		
+	uint8_t bits = bitMask;
 	for(int8_t fieldY = 0; fieldY < LCD5510_Y * numCellsByte; fieldY++) {
-		tmpBuff[0][fieldY / numCellsByte] +=
-			GOL_Get_Next_State_Cell(0, fieldY) << (fieldY % numCellsByte);
-		tmpBuff[1][fieldY / numCellsByte] +=
-			GOL_Get_Next_State_Cell(1, fieldY) << (fieldY % numCellsByte);
+		if(GOL_Get_Next_State_Cell(0, fieldY))
+			tmpBuff[0][fieldY / numCellsByte] |= bits;
+			
+		if(GOL_Get_Next_State_Cell(1, fieldY))
+			tmpBuff[1][fieldY / numCellsByte] |= bits;
+			
+		bits <<= cellSize;
+		if(!bits)
+			bits = bitMask;
 	}
 	
 	for(int8_t fieldX = 2; fieldX < LCD5510_X / cellSize; fieldX++) {
@@ -27,8 +35,11 @@ void GOL_Next_Step() {
 		tmpBuff[2][5] = 0;
 		
 		for(int8_t fieldY = 0; fieldY < LCD5510_Y * numCellsByte; fieldY++) {
-			tmpBuff[2][fieldY / numCellsByte] +=
-				GOL_Get_Next_State_Cell(fieldX, fieldY) << (fieldY % numCellsByte);
+			if(GOL_Get_Next_State_Cell(fieldX, fieldY))
+				tmpBuff[2][fieldY / numCellsByte] |= bits;
+			bits <<= cellSize;
+			if(!bits)
+				bits = bitMask;
 		}
 		GOL_Draw_Column(tmpBuff[1], fieldX - 1);
 		tmpBuff[1][0] = tmpBuff[2][0];
@@ -37,25 +48,21 @@ void GOL_Next_Step() {
 		tmpBuff[1][3] = tmpBuff[2][3];
 		tmpBuff[1][4] = tmpBuff[2][4];
 		tmpBuff[1][5] = tmpBuff[2][5];
+		
+		
 	}
-	
-	//GOL_Draw_Column(tmpBuff[0], 0);
-	//GOL_Draw_Column(tmpBuff[2], LCD5510_X / cellSize - 1);
+	GOL_Draw_Column(tmpBuff[0], 0);
+	GOL_Draw_Column(tmpBuff[2], LCD5510_X / cellSize - 1);
 }
 
 void GOL_Draw_Column(uint8_t *pData, int8_t x) {
 	x *= cellSize;
-	for(uint8_t i = 0; i < cellSize; i++) {
+	for(uint8_t condition = x + cellSize; x < condition; x++) {
 		for(uint8_t y = 0; y < LCD5510_Y; y++) {
-			pPlayingField[y * LCD5510_X + x] = 0;
-			for(uint8_t bit = 0; bit < 8; bit += cellSize) {
-				for(uint8_t j = 0; j < cellSize; j++) {
-					if(pData[y] & 1<<(bit / cellSize)) 
-						pPlayingField[y * LCD5510_X + x] += 1<<(bit + j);
-				}
-			}
+
+			pPlayingField[y * LCD5510_X + x] = pData[y];
+
 		}
-		x++;
 	}
 }
 

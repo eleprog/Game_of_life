@@ -13,7 +13,7 @@ uint8_t *videoBuffer = startPlayingField;
 int main(void) {
 	DDRC |= 1<<5;
 	LCD5110_Init();
-	GOL_Init(videoBuffer, 2);
+	GOL_Init(videoBuffer, 1);
 	LCD5110_Video_Buff_Send(videoBuffer);
 	
     while (1) {
