@@ -9,7 +9,6 @@
 
 uint8_t *videoBuffer = startPlayingField;
 	
-
 int main(void) {
 	DDRC |= 1<<5;
 	LCD5110_Init();
@@ -23,4 +22,3 @@ int main(void) {
 		LCD5110_Video_Buff_Send(videoBuffer);	
     }
 }
-
